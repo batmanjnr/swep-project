@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simple Interest Calculator — Redesigned</title>
+  <style>
+    :root{
+      --bg:#f6f8fb; --card:#ffffff; --muted:#6b7280; --primary:#2563eb; --accent:#06b6d4; --success:#16a34a;
+      --glass: rgba(99,102,241,0.06);
+      --radius:12px;
+      color-scheme: light;
+    }
+    [data-theme="dark"]{
+      --bg:#0b1220; --card:#0f1724; --muted:#9ca3af; --primary:#60a5fa; --accent:#67e8f9; --success:#86efac; --glass: rgba(255,255,255,0.03);
+      color-scheme: dark;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; margin:0; background:linear-gradient(180deg,var(--bg),#ffffff); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:40px}
+
+    .container{width:100%; max-width:760px}
+    .card{background:var(--card); border-radius:var(--radius); box-shadow:0 10px 30px rgba(2,6,23,0.08); padding:28px}
+    header{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+    h1{margin:0; font-size:22px}
+    .controls{display:flex; gap:8px; align-items:center}
+    label.switch{display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--muted)}
+    .switch input{display:none}
+    .toggle{width:44px; height:26px; background:var(--glass); border-radius:999px; position:relative}
+    .toggle::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:all .18s}
+    input:checked + .toggle{background:linear-gradient(90deg,var(--primary),var(--accent))}
+    input:checked + .toggle::after{transform:translateX(18px)}
+
+    form.grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .full{grid-column:1/-1}
+    label.field{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+    input[type="text"], input[type="number"]{width:100%; padding:12px 14px; border-radius:8px; border:1px solid rgba(15,23,42,0.06); font-size:15px; background:transparent}
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button{appearance:none}
+    .actions{display:flex; gap:10px; margin-top:12px}
+    button.primary{flex:1; background:linear-gradient(90deg,var(--primary), #1e40af); color:#fff; border:none; padding:12px 14px; border-radius:10px; font-weight:600; cursor:pointer}
+    button.ghost{background:transparent; border:1px solid rgba(2,6,23,0.06); padding:12px 14px; border-radius:10px; cursor:pointer}
+    button.primary:active{transform:translateY(1px)}
+
+    .info{margin-top:16px; background:var(--glass); padding:14px; border-radius:8px; color:var(--muted); font-size:14px}
+    .result{margin-top:12px; padding:14px; background:linear-gradient(180deg, rgba(34,197,94,0.08), rgba(34,197,94,0.03)); border-radius:8px; color:var(--muted); display:flex; flex-direction:column; gap:6px}
+    .money{font-size:18px; font-weight:700; color:var(--success)}
+    .breakdown{font-family:monospace; background:rgba(0,0,0,0.02); padding:10px; border-radius:6px; font-size:13px}
+
+    .history{margin-top:14px; display:grid; gap:8px}
+    .hist-item{display:flex; justify-content:space-between; gap:12px; padding:10px; border-radius:8px; background:var(--card); border:1px solid rgba(2,6,23,0.04); align-items:center}
+    .muted{color:var(--muted)}
+
+    footer.small{margin-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--muted)}
+
+    /* Responsive */
+    @media (max-width:640px){ form.grid{grid-template-columns:1fr} .actions{flex-direction:column} header{flex-direction:column; align-items:flex-start; gap:10px} }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="card" role="region" aria-label="Simple interest calculator">
+      <header>
+        <h1>Simple Interest Calculator</h1>
+        <div class="controls">
+          <label class="switch">
+            <input id="themeToggle" type="checkbox" aria-label="Toggle dark mode">
+            <span class="toggle"></span>
+          </label>
+          <div style="width:8px"></div>
+          <button id="resetAll" class="ghost" title="Reset form and history">Reset</button>
+        </div>
+      </header>
+
+      <form id="calcForm" class="grid" autocomplete="off">
+        <div>
+          <label class="field" for="principal">Principal (₦)</label>
+          <input id="principal" name="principal" inputmode="numeric" placeholder="e.g. 120,000" aria-describedby="principalHelp">
+          <div id="principalHelp" class="muted" style="font-size:12px; margin-top:6px">Enter the amount in naira. Commas are supported.</div>
+        </div>
+
+        <div>
+          <label class="field" for="rate">Rate (%)</label>
+          <input id="rate" name="rate" type="number" step="0.01" placeholder="e.g. 8">
+        </div>
+
+        <div>
+          <label class="field" for="years">Years</label>
+          <input id="years" name="years" type="number" step="1" min="1" placeholder="e.g. 5">
+        </div>
+
+        <div class="full">
+          <div class="actions">
+            <button id="calculate" type="button" class="primary">Calculate</button>
+            <button id="downloadCsv" type="button" class="ghost">Download History</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="info" id="formula">The formula: <strong>SI = (P × R × T) / 100</strong>. Total = P + SI</div>
+
+      <div id="outputArea">
+        <div id="resultCard" class="result" hidden>
+          <div>The Simple Interest is <span id="si" class="money">₦0.00</span></div>
+          <div>The Total is <span id="total" class="money">₦0.00</span></div>
+          <div class="breakdown" id="breakdown"></div>
+        </div>
+
+        <div class="history" id="historyList" aria-live="polite"></div>
+      </div>
+
+      <footer class="small">
+        <div>Tip: Use the Reset button to clear history.</div>
+        <div class="muted">Built for clarity & accessibility</div>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // Helpers
+    const el = id => document.getElementById(id)
+    const fmt = n => {
+      if (isNaN(n)) return '₦0.00'
+      return '₦' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})
+    }
+
+    // parse number allowing commas
+    function parseNumber(str){
+      if (str === undefined || str === null) return NaN
+      const cleaned = String(str).replace(/,/g,'').trim()
+      if (cleaned === '') return NaN
+      return Number(cleaned)
+    }
+
+    // state
+    const state = { history: [] }
+
+    // load
+    function load(){
+      const h = localStorage.getItem('si_history')
+      if (h) try{ state.history = JSON.parse(h) }catch(e){ state.history = [] }
+      renderHistory()
+      const theme = localStorage.getItem('theme')
+      if (theme === 'dark') document.documentElement.setAttribute('data-theme','dark'), el('themeToggle').checked = true
+    }
+
+    function saveHistory(){ localStorage.setItem('si_history', JSON.stringify(state.history.slice(0,20))) }
+
+    function renderHistory(){
+      const list = el('historyList'); list.innerHTML = ''
+      if (!state.history.length){ list.innerHTML = '<div class="muted">No history yet — do a calculation to save it here.</div>'; return }
+      state.history.forEach(item=>{
+        const d = document.createElement('div'); d.className = 'hist-item'
+        d.innerHTML = `<div><strong>${fmt(item.si)}</strong><div class="muted" style="font-size:13px">Total ${fmt(item.total)} • ${item.rate}% • ${item.years}y</div></div><div class="muted" style="font-size:13px">${new Date(item.t).toLocaleString()}</div>`
+        list.appendChild(d)
+      })
+    }
+
+    // calculation
+    el('calculate').addEventListener('click', ()=>{
+      const P = parseNumber(el('principal').value)
+      const R = parseNumber(el('rate').value)
+      const T = parseNumber(el('years').value)
+
+      // validation
+      const errors = []
+      if (!isFinite(P) || P <= 0) errors.push('Enter a valid principal greater than 0')
+      if (!isFinite(R) || R <= 0) errors.push('Enter a valid interest rate greater than 0')
+      if (!isFinite(T) || T <= 0) errors.push('Enter a valid number of years greater than 0')
+
+      if (errors.length){ alert(errors.join('\n')); return }
+
+      // compute
+      const SI = (P * R * T) / 100
+      const total = P + SI
+
+      // show
+      el('si').textContent = fmt(SI)
+      el('total').textContent = fmt(total)
+      el('breakdown').textContent = `SI = (${P.toLocaleString()} × ${R} × ${T}) / 100 = ${SI.toLocaleString(undefined,{minimumFractionDigits:2})}`
+      el('resultCard').hidden = false
+
+      // push history
+      state.history.unshift({p:P, rate:R, years:T, si:SI, total:total, t: Date.now() })
+      if (state.history.length>20) state.history.length = 20
+      saveHistory()
+      renderHistory()
+    })
+
+    // format principal on blur
+    el('principal').addEventListener('blur', (e)=>{
+      const n = parseNumber(e.target.value)
+      if (!isFinite(n)) return
+      e.target.value = n.toLocaleString()
+    })
+    // keep plain while typing
+    el('principal').addEventListener('focus', (e)=>{
+      e.target.value = String(e.target.value).replace(/,/g,'')
+    })
+
+    // reset
+    el('resetAll').addEventListener('click', ()=>{
+      if (!confirm('Reset form and clear history?')) return
+      el('principal').value = ''
+      el('rate').value = ''
+      el('years').value = ''
+      state.history = []
+      saveHistory(); renderHistory(); el('resultCard').hidden = true
+    })
+
+    // theme toggle
+    el('themeToggle').addEventListener('change', (e)=>{
+      if (e.target.checked) { document.documentElement.setAttribute('data-theme','dark'); localStorage.setItem('theme','dark') }
+      else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('theme','light') }
+    })
+
+    // download history as CSV
+    el('downloadCsv').addEventListener('click', ()=>{
+      if (!state.history.length){ alert('No history to download'); return }
+      const rows = [['timestamp','principal','rate','years','si','total']]
+      state.history.forEach(h=> rows.push([new Date(h.t).toISOString(), h.p, h.rate, h.years, h.si, h.total]))
+      const csv = rows.map(r=> r.map(c=> '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n')
+      const blob = new Blob([csv], {type:'text/csv'})
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a'); a.href = url; a.download = 'si-history.csv'; a.click(); URL.revokeObjectURL(url)
+    })
+
+    // init
+    load()
+  </script>
+</body>
+</html>
