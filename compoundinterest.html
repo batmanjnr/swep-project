@@ -24,8 +24,8 @@
                 aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarTogglerDemo02" style="margin-left: 50%;">
-                <div class="d-flex gap-2">
+            <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+                <div class="d-flex gap-2 ms-auto flex-wrap">
                     <a class="btn btn-outline-primary" href="./compoundinterest.html">Compound Interest Calculator</a>
                     <a class="btn btn-outline-secondary" href="./simpleinterest.html">Simple Interest Calculator</a>
                     <a class="btn btn-outline-success" href="./historyCi.html">History</a>
@@ -40,8 +40,13 @@
             <div class="col-md-6">
                 <div class="card shadow ">
                     <div class="card-body ">
-                        <p class="card-title mb-4 text-center">Compound Interest Calculator <input type="checkbox"
-                                id="themeToggle" style="margin-left: 30%; "> Dark Mode</p>
+                        <p class="card-title mb-4 text-center d-flex align-items-center justify-content-center gap-2">
+                            Compound Interest Calculator
+                            <span class="form-check form-switch m-0">
+                                <input type="checkbox" class="form-check-input" id="themeToggle">
+                                <label class="form-check-label" for="themeToggle">Dark Mode</label>
+                            </span>
+                        </p>
 
                         <form>
                             <div class="mb-3">
