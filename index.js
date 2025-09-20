@@ -11,11 +11,12 @@ function solve() {
     const rate_year = ((1 + (rate_cal / compound)) ** (compound * year))
     const amount = (principle * rate_year)
     const total= amount-principle
-    const history = { total, amount, principle, rate, year,compound }
-    result1.push(history)
+    
     if (principle === "" || rate === "" || compound === "") {
         display.innerHTML += `<div id="display" class="alert alert-info text-center" role="alert">Input Your Value</div>`
     } else {
+        const history = { total, amount, principle, rate, year,compound }
+    result1.push(history)
 
         display.innerHTML += `<div id="display" class="alert alert-info text-center" role="alert">The Formula for calculating it is A = P(1 + r/n)^(nt) <br>
     A= final amount<br>
